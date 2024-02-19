@@ -2,6 +2,7 @@ package com.example.expandablelist
 
 import android.annotation.SuppressLint
 import android.content.res.loader.ResourcesLoader
+import android.graphics.drawable.Icon
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,6 +17,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -38,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
@@ -66,7 +72,6 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Navigation(viewModel)
-//                    AuthorExpandableList(viewModel)
                 }
             }
         }
@@ -112,8 +117,7 @@ fun AuthorExpandableList(viewModel: AuthorViewModel, navController: NavControlle
                             .wrapContentHeight(),
                             shape = MaterialTheme.shapes.medium,
                             onClick = {
-                                navController.navigate(Route.DetailsScreen.route + "/$index")
-//                    expandableState = if(expandableState == index) -1 else index
+                                expandableState = if (expandableState == index) -1 else index
                             }) {
                             Column() {
                                 Row(
@@ -136,8 +140,18 @@ fun AuthorExpandableList(viewModel: AuthorViewModel, navController: NavControlle
                                     item.author?.let { it1 ->
                                         Text(
                                             text = it1,
-                                            color = Color.Black
+                                            modifier = Modifier.weight(1f, true)
                                         )
+                                    }
+                                    IconButton(onClick = {
+                                        expandableState = if (expandableState == index) -1 else index
+                                    }) {
+                                        Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "")
+                                    }
+                                    IconButton(onClick = {
+                                        navController.navigate(Route.DetailsScreen.route + "/$index")
+                                    }) {
+                                        Icon(Icons.Rounded.ArrowForward, contentDescription = "")
                                     }
                                 }
                             }
@@ -148,10 +162,10 @@ fun AuthorExpandableList(viewModel: AuthorViewModel, navController: NavControlle
                                         .scale(Scale.FIT)
                                         .data(item.downloadUrl)
                                         .build(),
-                                    modifier = Modifier
+                                    modifier = Modifier.fillMaxWidth()
                                         .padding(20.dp),
                                     contentDescription = "",
-                                    contentScale = ContentScale.FillHeight
+                                    contentScale = ContentScale.FillWidth
                                 )
                             }
                         }
@@ -176,16 +190,13 @@ fun AuthorExpandableList(viewModel: AuthorViewModel, navController: NavControlle
 fun DetailsScreen(viewModel: AuthorViewModel, selectedItemPos: Int, navController: NavController) {
     val response = viewModel.authorList.collectAsState()
     val selectedItem1 = response.value
-    val  selectedItem = (selectedItem1 as AuthorViewModel.ApiState.Success).data[selectedItemPos]
+    val selectedItem = (selectedItem1 as AuthorViewModel.ApiState.Success).data[selectedItemPos]
 
     Scaffold(topBar = {
         TopAppBar(title = { Text(text = "Details Screen") },
             navigationIcon = {
                 IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                        contentDescription = ""
-                    )
+                    Icon(Icons.Rounded.ArrowBack, contentDescription = null)
                 }
             })
     }) {
@@ -209,7 +220,8 @@ fun Navigation(viewModel: AuthorViewModel) {
         composable(Route.AuthorScreen.route) {
             AuthorExpandableList(viewModel, navController)
         }
-        composable(Route.DetailsScreen.route + "/{selectedItem}",
+        composable(
+            Route.DetailsScreen.route + "/{selectedItem}",
             arguments = listOf(navArgument("selectedItem") { type = NavType.IntType })
         ) { backstack ->
             backstack.arguments?.let {
@@ -228,10 +240,3 @@ sealed class Route(val route: String) {
     object AuthorScreen : Route("AuthorScreen")
     object DetailsScreen : Route("DetailScreen")
 }
-//@Preview(showBackground = true)
-//@Composable
-//fun GreetingPreview() {
-//    ExpandableListTheme {
-//        AuthorExpandableList("Android")
-//    }
-//}
